@@ -8,9 +8,10 @@ const defaultZones = [
   { label: "London", tz: "Europe/London" }
 ];
 
+// Load user zones from localStorage or use default
 let userZones = JSON.parse(localStorage.getItem("opsclock-zones")) || defaultZones;
 
-// Map custom labels to IANA time zones for converter
+// Map custom labels to IANA time zones
 const tzMap = {
   "ZULU": "UTC",
   "UTC": "UTC",
@@ -23,14 +24,16 @@ const tzMap = {
   "SYDNEY": "Australia/Sydney"
 };
 
+// DOM Elements
 const container = document.getElementById("clock-container");
 const timezoneSelect = document.getElementById("timezone-select");
 const addBtn = document.getElementById("add-zone");
 const convertInput = document.getElementById("converter-input");
+const convertZoneSelect = document.getElementById("converter-zone");
 const convertBtn = document.getElementById("convert-btn");
 const convertResults = document.getElementById("converter-results");
 
-// --- LocalStorage ---
+// --- Save Zones to localStorage ---
 function saveZones() {
   localStorage.setItem("opsclock-zones", JSON.stringify(userZones));
 }
@@ -66,7 +69,7 @@ function renderClocks() {
   });
 }
 
-// --- Update Clocks ---
+// --- Update Clocks Every Second ---
 function updateClocks() {
   const now = new Date();
   userZones.forEach((zone, index) => {
@@ -75,7 +78,7 @@ function updateClocks() {
   });
 }
 
-// --- Add Zone ---
+// --- Add Zone Button ---
 addBtn.addEventListener("click", () => {
   const selectedTz = timezoneSelect.value;
   const selectedLabel = timezoneSelect.options[timezoneSelect.selectedIndex].text;
@@ -87,16 +90,17 @@ addBtn.addEventListener("click", () => {
   }
 });
 
-// --- Smart Time Converter ---
-function parseTimeInput(input) {
-  const match = input.match(/^([A-Za-z\/_]+)\s+(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?$/);
+// --- Time Converter with Dropdown ---
+function parseTimeInputWithDropdown(input, tzInput) {
+  // Match HH:MM with optional AM/PM
+  const match = input.match(/^(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?$/);
   if (!match) return null;
 
-  let [_, tzInputRaw, hours, minutes, ampm] = match;
-  const tzInput = tzMap[tzInputRaw.toUpperCase()] || tzInputRaw; // map label to IANA
+  let [, hours, minutes, ampm] = match;
   hours = parseInt(hours);
   minutes = parseInt(minutes);
 
+  // Convert 12-hour format if AM/PM present
   if (ampm) {
     ampm = ampm.toUpperCase();
     if (ampm === "PM" && hours < 12) hours += 12;
@@ -106,20 +110,24 @@ function parseTimeInput(input) {
   const now = new Date();
   let date;
   try {
+    // Create Date object in selected input time zone
     date = new Date(now.toLocaleString("en-US", { timeZone: tzInput }));
     date.setHours(hours, minutes, 0, 0);
   } catch (e) {
     return null;
   }
 
-  return { date, tzInput };
+  return { date };
 }
 
-// Convert Button
+// --- Convert Button Event ---
 convertBtn.addEventListener("click", () => {
-  const parsed = parseTimeInput(convertInput.value.trim());
+  const inputTime = convertInput.value.trim();
+  const tzInput = convertZoneSelect.value;
+
+  const parsed = parseTimeInputWithDropdown(inputTime, tzInput);
   if (!parsed) {
-    convertResults.innerHTML = "Invalid format. Use e.g., MST 5:30 PM or Zulu 23:00";
+    convertResults.innerHTML = "Invalid format. Use e.g., 14:00 or 5:30 PM";
     return;
   }
 
@@ -133,7 +141,7 @@ convertBtn.addEventListener("click", () => {
   convertResults.innerHTML = resultsHtml;
 });
 
-// --- Init ---
+// --- Initialize ---
 renderClocks();
 updateClocks();
 setInterval(updateClocks, 1000);
