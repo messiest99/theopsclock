@@ -8,19 +8,29 @@ const defaultZones = [
   { label: "London", tz: "Europe/London" }
 ];
 
-// Load user zones from localStorage or use default
 let userZones = JSON.parse(localStorage.getItem("opsclock-zones")) || defaultZones;
 
-// DOM Elements
+// Map custom labels to IANA time zones for converter
+const tzMap = {
+  "ZULU": "UTC",
+  "UTC": "UTC",
+  "PST": "America/Los_Angeles",
+  "MST": "America/Denver",
+  "CT": "America/Chicago",
+  "EST": "America/New_York",
+  "LONDON": "Europe/London",
+  "TOKYO": "Asia/Tokyo",
+  "SYDNEY": "Australia/Sydney"
+};
+
 const container = document.getElementById("clock-container");
 const timezoneSelect = document.getElementById("timezone-select");
 const addBtn = document.getElementById("add-zone");
 const convertInput = document.getElementById("converter-input");
-const convertZoneSelect = document.getElementById("converter-zone");
 const convertBtn = document.getElementById("convert-btn");
 const convertResults = document.getElementById("converter-results");
 
-// --- Save Zones to localStorage ---
+// --- LocalStorage ---
 function saveZones() {
   localStorage.setItem("opsclock-zones", JSON.stringify(userZones));
 }
@@ -56,7 +66,7 @@ function renderClocks() {
   });
 }
 
-// --- Update Clocks Every Second ---
+// --- Update Clocks ---
 function updateClocks() {
   const now = new Date();
   userZones.forEach((zone, index) => {
@@ -65,7 +75,7 @@ function updateClocks() {
   });
 }
 
-// --- Add Zone Button ---
+// --- Add Zone ---
 addBtn.addEventListener("click", () => {
   const selectedTz = timezoneSelect.value;
   const selectedLabel = timezoneSelect.options[timezoneSelect.selectedIndex].text;
@@ -77,12 +87,13 @@ addBtn.addEventListener("click", () => {
   }
 });
 
-// --- Converter: Build UTC Date from input time & input zone ---
-function convertInputToUTC(inputTime, inputZone) {
-  const match = inputTime.match(/^(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?$/);
+// --- Smart Time Converter ---
+function parseTimeInput(input) {
+  const match = input.match(/^([A-Za-z\/_]+)\s+(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?$/);
   if (!match) return null;
 
-  let [, hours, minutes, ampm] = match;
+  let [_, tzInputRaw, hours, minutes, ampm] = match;
+  const tzInput = tzMap[tzInputRaw.toUpperCase()] || tzInputRaw; // map label to IANA
   hours = parseInt(hours);
   minutes = parseInt(minutes);
 
@@ -92,47 +103,37 @@ function convertInputToUTC(inputTime, inputZone) {
     if (ampm === "AM" && hours === 12) hours = 0;
   }
 
-  // Create a Date object for today at the given time in the input time zone
   const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const day = now.getDate();
+  let date;
+  try {
+    date = new Date(now.toLocaleString("en-US", { timeZone: tzInput }));
+    date.setHours(hours, minutes, 0, 0);
+  } catch (e) {
+    return null;
+  }
 
-  // Step 1: build ISO string as if in input time zone
-  const localStr = `${year}-${(month+1).toString().padStart(2,'0')}-${day.toString().padStart(2,'0')}T${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:00`;
-
-  // Step 2: convert to UTC by using toLocaleString trick
-  const utcDate = new Date(new Date(localStr).toLocaleString("en-US", { timeZone: "UTC", hour12: false }));
-  
-  // Step 3: calculate offset between input zone and UTC
-  const tzOffsetDate = new Date(localStr);
-  const tzOffset = tzOffsetDate.getTime() - utcDate.getTime();
-  
-  // Final UTC date
-  return new Date(utcDate.getTime() - tzOffset);
+  return { date, tzInput };
 }
 
-// --- Convert Button ---
+// Convert Button
 convertBtn.addEventListener("click", () => {
-  const inputTime = convertInput.value.trim();
-  const inputZone = convertZoneSelect.value;
-
-  const utcDate = convertInputToUTC(inputTime, inputZone);
-  if (!utcDate) {
-    convertResults.innerHTML = "Invalid format. Use HH:MM or HH:MM AM/PM";
+  const parsed = parseTimeInput(convertInput.value.trim());
+  if (!parsed) {
+    convertResults.innerHTML = "Invalid format. Use e.g., MST 5:30 PM or Zulu 23:00";
     return;
   }
 
+  const { date } = parsed;
   let resultsHtml = "";
   userZones.forEach(zone => {
-    const t = utcDate.toLocaleTimeString("en-US", { timeZone: zone.tz, hour12: false });
+    const t = date.toLocaleTimeString("en-US", { timeZone: zone.tz, hour12: false });
     resultsHtml += `<div>${zone.label}: ${t}</div>`;
   });
 
   convertResults.innerHTML = resultsHtml;
 });
 
-// --- Initialize ---
+// --- Init ---
 renderClocks();
 updateClocks();
 setInterval(updateClocks, 1000);
