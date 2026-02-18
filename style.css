@@ -9,19 +9,18 @@ body {
   min-height: 100vh;
 }
 
-/* Settings area (Add Time Zone) */
+/* Settings area */
 .settings {
   margin: 20px;
   display: flex;
   gap: 10px;
   align-items: center;
-  background-color: #000; /* match background */
+  background-color: #000;
   padding: 10px 15px;
   border: 1px dashed red;
   border-radius: 8px;
 }
 
-/* Select and buttons */
 select, button, #converter-input, #convert-btn {
   background-color: black;
   color: red;
@@ -38,7 +37,6 @@ select:focus, button:focus, #converter-input:focus, #convert-btn:focus {
   color: red;
 }
 
-/* Hover effect for buttons */
 button:hover, #convert-btn:hover {
   background-color: #220000;
   cursor: pointer;
@@ -57,12 +55,12 @@ button:hover, #convert-btn:hover {
 .clock {
   text-align: center;
   padding: 10px 20px;
-  border-right: 2px dashed red; /* dashed separator */
+  border-right: 2px dashed red;
   position: relative;
 }
 
 .clock:last-child {
-  border-right: none; /* remove line after last clock */
+  border-right: none;
 }
 
 .label {
@@ -101,7 +99,7 @@ button:hover, #convert-btn:hover {
 #converter-input {
   font-size: 16px;
   padding: 5px;
-  width: 180px;
+  width: 220px;
 }
 
 #convert-btn {
