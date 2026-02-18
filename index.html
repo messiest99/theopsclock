@@ -103,11 +103,8 @@
 
 <h1>OpsClock</h1>
 
-<div id="clock-container">
-  <!-- Dynamic clocks appear here -->
-</div>
+<div id="clock-container"></div>
 
-<!-- Add Time Zone Panel -->
 <div class="add-zone-panel">
   <select id="timezone-select">
     <option value="UTC">Zulu</option>
@@ -122,7 +119,6 @@
   <button id="add-zone">Add</button>
 </div>
 
-<!-- Time Converter -->
 <div class="converter">
   <h2>Time Converter</h2>
   <input type="text" id="converter-input" placeholder="e.g., 14:00 or 2:30 PM" />
@@ -210,7 +206,6 @@
   addBtn.addEventListener("click", () => {
     const selectedTz = timezoneSelect.value;
     const selectedLabel = timezoneSelect.options[timezoneSelect.selectedIndex].text;
-
     if (!userZones.some(z => z.tz === selectedTz)) {
       userZones.push({ label: selectedLabel, tz: selectedTz });
       saveZones();
@@ -218,10 +213,16 @@
     }
   });
 
-  // --- Converter Function ---
-  function convertTime(inputTime, inputZone) {
+  // --- Convert Button (Fully Fixed) ---
+  convertBtn.addEventListener("click", () => {
+    const inputTime = convertInput.value.trim();
+    const inputZone = convertZoneSelect.value;
+
     const match = inputTime.match(/^(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?$/);
-    if (!match) return null;
+    if (!match) {
+      convertResults.innerHTML = "Invalid format. Use HH:MM or HH:MM AM/PM";
+      return;
+    }
 
     let [, hours, minutes, ampm] = match;
     hours = parseInt(hours);
@@ -233,27 +234,26 @@
       if (ampm === "AM" && hours === 12) hours = 0;
     }
 
-    // Build a Date object for today in input zone
+    // --- Build UTC timestamp from input zone ---
     const now = new Date();
-    const date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0);
+    const dtf = new Intl.DateTimeFormat("en-US", {
+      hour12: false,
+      timeZone: inputZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    });
+    const [{ value: month },,{ value: day },,{ value: year },,{ value: hour },,{ value: minute },,{ value: second }] = dtf.formatToParts(now);
+    // Construct a Date in UTC corresponding to input time in input zone
+    const inputDate = new Date(Date.UTC(year, month-1, day, hours, minutes, 0));
 
-    return date.toLocaleString("en-US", { timeZone: inputZone, hour12: false });
-  }
-
-  // --- Convert Button ---
-  convertBtn.addEventListener("click", () => {
-    const inputTime = convertInput.value.trim();
-    const inputZone = convertZoneSelect.value;
-
-    const parsed = convertTime(inputTime, inputZone);
-    if (!parsed) {
-      convertResults.innerHTML = "Invalid format. Use HH:MM or HH:MM AM/PM";
-      return;
-    }
-
+    // --- Show converted times ---
     let resultsHtml = "";
     userZones.forEach(zone => {
-      const t = new Date(parsed).toLocaleTimeString("en-US", { timeZone: zone.tz, hour12: false });
+      const t = inputDate.toLocaleTimeString("en-US", { timeZone: zone.tz, hour12: false });
       resultsHtml += `<div>${zone.label}: ${t}</div>`;
     });
 
