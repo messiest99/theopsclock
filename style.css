@@ -4,14 +4,30 @@ body {
   color: red;
   font-family: 'Courier New', monospace;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  height: 100vh;
+  min-height: 100vh;
+}
+
+.settings {
+  margin: 20px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+select, button {
+  font-size: 16px;
+  padding: 5px;
 }
 
 .container {
   display: flex;
-  gap: 80px;
+  flex-wrap: wrap;
+  gap: 60px;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
 }
 
 .clock {
@@ -28,4 +44,3 @@ body {
   font-size: 80px;
   text-shadow: 0 0 15px red;
 }
-
