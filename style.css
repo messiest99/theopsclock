@@ -32,6 +32,13 @@ select, button {
 
 .clock {
   text-align: center;
+  padding: 10px 20px;
+  border-right: 2px dashed red; /* dashed separator */
+  position: relative;
+}
+
+.clock:last-child {
+  border-right: none; /* remove line after last clock */
 }
 
 .label {
@@ -43,4 +50,39 @@ select, button {
 .time {
   font-size: 80px;
   text-shadow: 0 0 15px red;
+}
+
+/* Remove button */
+.remove-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: none;
+  border: none;
+  color: red;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* Converter */
+.converter {
+  margin: 30px;
+  text-align: center;
+}
+
+#converter-input {
+  font-size: 16px;
+  padding: 5px;
+  width: 180px;
+}
+
+#convert-btn {
+  font-size: 16px;
+  padding: 5px 10px;
+  margin-left: 10px;
+}
+
+#converter-results {
+  margin-top: 15px;
+  line-height: 1.5;
 }
