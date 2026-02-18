@@ -26,11 +26,21 @@ function renderClocks() {
     const label = document.createElement("div");
     label.classList.add("label");
     label.textContent = zone.label;
-    
+
     const time = document.createElement("div");
     time.classList.add("time");
     time.id = `clock-${index}`;
-    
+
+    const removeBtn = document.createElement("button");
+    removeBtn.textContent = "×";
+    removeBtn.classList.add("remove-btn");
+    removeBtn.addEventListener("click", () => {
+      userZones.splice(index, 1);
+      saveZones();
+      renderClocks();
+    });
+
+    clockDiv.appendChild(removeBtn);
     clockDiv.appendChild(label);
     clockDiv.appendChild(time);
     container.appendChild(clockDiv);
@@ -45,16 +55,58 @@ function updateClocks() {
   });
 }
 
+// Add a new zone
 addBtn.addEventListener("click", () => {
   const selectedTz = timezoneSelect.value;
   const selectedLabel = timezoneSelect.options[timezoneSelect.selectedIndex].text;
   
-  // prevent duplicates
   if (!userZones.some(z => z.tz === selectedTz)) {
     userZones.push({ label: selectedLabel, tz: selectedTz });
     saveZones();
     renderClocks();
   }
+});
+
+// --- Time Converter (smarter, supports 12h/24h)
+const convertInput = document.getElementById("converter-input");
+const convertBtn = document.getElementById("convert-btn");
+const convertResults = document.getElementById("converter-results");
+
+function parseTimeInput(input) {
+  const match = input.match(/^([A-Za-z\/_]+)\s+(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?$/);
+  if (!match) return null;
+
+  let [_, tzInput, hours, minutes, ampm] = match;
+  hours = parseInt(hours);
+  minutes = parseInt(minutes);
+
+  if (ampm) {
+    ampm = ampm.toUpperCase();
+    if (ampm === "PM" && hours < 12) hours += 12;
+    if (ampm === "AM" && hours === 12) hours = 0;
+  }
+
+  const now = new Date();
+  const date = new Date(now.toLocaleString("en-US", { timeZone: tzInput }));
+  date.setHours(hours, minutes, 0, 0);
+  return { date, tzInput };
+}
+
+convertBtn.addEventListener("click", () => {
+  const parsed = parseTimeInput(convertInput.value.trim());
+  if (!parsed) {
+    convertResults.innerHTML = "Invalid format. Use e.g., MST 5:30 PM or 17:30";
+    return;
+  }
+
+  const { date } = parsed;
+  let resultsHtml = "";
+  userZones.forEach(zone => {
+    const t = date.toLocaleTimeString("en-US", { timeZone: zone.tz, hour12: false });
+    resultsHtml += `<div>${zone.label}: ${t}</div>`;
+  });
+
+  convertResults.innerHTML = resultsHtml;
 });
 
 renderClocks();
