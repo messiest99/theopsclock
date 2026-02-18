@@ -1,54 +1,270 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OpsClock</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpsClock</title>
+<style>
+  body {
+    margin: 0;
+    font-family: monospace;
+    background-color: #000;
+    color: #f00;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+
+  #clock-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 20px;
+    gap: 10px;
+  }
+
+  .clock {
+    border: 1px dashed #f00;
+    padding: 10px 20px;
+    text-align: center;
+    position: relative;
+    min-width: 100px;
+  }
+
+  .clock .label {
+    font-size: 16px;
+    margin-bottom: 5px;
+  }
+
+  .clock .time {
+    font-size: 24px;
+  }
+
+  .remove-btn {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: #000;
+    color: #f00;
+    border: 1px solid #f00;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 5px;
+  }
+
+  /* Add Zone Panel */
+  .add-zone-panel {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .add-zone-panel select,
+  .add-zone-panel button {
+    background-color: #000;
+    color: #f00;
+    border: 1px solid #f00;
+    padding: 5px 10px;
+    font-family: monospace;
+    cursor: pointer;
+  }
+
+  .add-zone-panel select {
+    min-width: 150px;
+  }
+
+  /* Converter Panel */
+  .converter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .converter input,
+  .converter select,
+  .converter button {
+    background-color: #000;
+    color: #f00;
+    border: 1px solid #f00;
+    padding: 5px 10px;
+    font-family: monospace;
+    font-size: 16px;
+  }
+
+  #converter-results {
+    margin-top: 10px;
+  }
+
+</style>
 </head>
 <body>
-  <!-- Add Time Zone Settings -->
-  <div class="settings">
-    <label for="timezone-select">Add Time Zone:</label>
-    <select id="timezone-select">
-      <option value="UTC">Zulu (UTC)</option>
-      <option value="America/Los_Angeles">PST</option>
-      <option value="America/Denver">MST</option>
-      <option value="America/Chicago">CT</option>
-      <option value="America/New_York">EST</option>
-      <option value="Europe/London">London</option>
-      <option value="Asia/Tokyo">Tokyo</option>
-      <option value="Australia/Sydney">Sydney</option>
-    </select>
-    <button id="add-zone">Add</button>
-  </div>
 
-  <!-- Clock Container -->
-  <div class="container" id="clock-container">
-    <!-- Clocks populate dynamically -->
-  </div>
+<h1>OpsClock</h1>
 
-  <!-- Time Converter -->
-  <div class="converter">
-    <h2>Time Converter</h2>
-    <input type="text" id="converter-input" placeholder="e.g., 17:00 or 5:30 PM" />
-    
-    <!-- Dropdown for input time zone -->
-    <select id="converter-zone">
-      <option value="UTC">Zulu (UTC)</option>
-      <option value="America/Los_Angeles">PST</option>
-      <option value="America/Denver">MST</option>
-      <option value="America/Chicago">CT</option>
-      <option value="America/New_York">EST</option>
-      <option value="Europe/London">London</option>
-      <option value="Asia/Tokyo">Tokyo</option>
-      <option value="Australia/Sydney">Sydney</option>
-    </select>
-  
-    <button id="convert-btn">Convert</button>
-    <div id="converter-results"></div>
-  </div>
+<div id="clock-container">
+  <!-- Dynamic clocks appear here -->
+</div>
 
-  <script src="script.js"></script>
+<!-- Add Time Zone Panel -->
+<div class="add-zone-panel">
+  <select id="timezone-select">
+    <option value="UTC">Zulu</option>
+    <option value="America/Los_Angeles">PST</option>
+    <option value="America/Denver">MST</option>
+    <option value="America/Chicago">CT</option>
+    <option value="America/New_York">EST</option>
+    <option value="Europe/London">London</option>
+    <option value="Asia/Tokyo">Tokyo</option>
+    <option value="Australia/Sydney">Sydney</option>
+  </select>
+  <button id="add-zone">Add</button>
+</div>
+
+<!-- Time Converter -->
+<div class="converter">
+  <h2>Time Converter</h2>
+  <input type="text" id="converter-input" placeholder="e.g., 14:00 or 2:30 PM" />
+  <select id="converter-zone">
+    <option value="UTC">Zulu (UTC)</option>
+    <option value="America/Los_Angeles">PST</option>
+    <option value="America/Denver">MST</option>
+    <option value="America/Chicago">CT</option>
+    <option value="America/New_York">EST</option>
+    <option value="Europe/London">London</option>
+    <option value="Asia/Tokyo">Tokyo</option>
+    <option value="Australia/Sydney">Sydney</option>
+  </select>
+  <button id="convert-btn">Convert</button>
+  <div id="converter-results"></div>
+</div>
+
+<script>
+  // --- Default Zones ---
+  const defaultZones = [
+    { label: "Zulu", tz: "UTC" },
+    { label: "PST", tz: "America/Los_Angeles" },
+    { label: "MST", tz: "America/Denver" },
+    { label: "CT", tz: "America/Chicago" },
+    { label: "EST", tz: "America/New_York" },
+    { label: "London", tz: "Europe/London" }
+  ];
+
+  let userZones = JSON.parse(localStorage.getItem("opsclock-zones")) || defaultZones;
+
+  const container = document.getElementById("clock-container");
+  const timezoneSelect = document.getElementById("timezone-select");
+  const addBtn = document.getElementById("add-zone");
+  const convertInput = document.getElementById("converter-input");
+  const convertZoneSelect = document.getElementById("converter-zone");
+  const convertBtn = document.getElementById("convert-btn");
+  const convertResults = document.getElementById("converter-results");
+
+  // --- Save Zones ---
+  function saveZones() {
+    localStorage.setItem("opsclock-zones", JSON.stringify(userZones));
+  }
+
+  // --- Render Clocks ---
+  function renderClocks() {
+    container.innerHTML = "";
+    userZones.forEach((zone, index) => {
+      const clockDiv = document.createElement("div");
+      clockDiv.classList.add("clock");
+
+      const label = document.createElement("div");
+      label.classList.add("label");
+      label.textContent = zone.label;
+
+      const time = document.createElement("div");
+      time.classList.add("time");
+      time.id = `clock-${index}`;
+
+      const removeBtn = document.createElement("button");
+      removeBtn.textContent = "×";
+      removeBtn.classList.add("remove-btn");
+      removeBtn.addEventListener("click", () => {
+        userZones.splice(index, 1);
+        saveZones();
+        renderClocks();
+      });
+
+      clockDiv.appendChild(removeBtn);
+      clockDiv.appendChild(label);
+      clockDiv.appendChild(time);
+      container.appendChild(clockDiv);
+    });
+  }
+
+  // --- Update Clocks ---
+  function updateClocks() {
+    const now = new Date();
+    userZones.forEach((zone, index) => {
+      const t = now.toLocaleTimeString("en-US", { timeZone: zone.tz, hour12: false });
+      document.getElementById(`clock-${index}`).textContent = t;
+    });
+  }
+
+  // --- Add Zone ---
+  addBtn.addEventListener("click", () => {
+    const selectedTz = timezoneSelect.value;
+    const selectedLabel = timezoneSelect.options[timezoneSelect.selectedIndex].text;
+
+    if (!userZones.some(z => z.tz === selectedTz)) {
+      userZones.push({ label: selectedLabel, tz: selectedTz });
+      saveZones();
+      renderClocks();
+    }
+  });
+
+  // --- Converter Function ---
+  function convertTime(inputTime, inputZone) {
+    const match = inputTime.match(/^(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?$/);
+    if (!match) return null;
+
+    let [, hours, minutes, ampm] = match;
+    hours = parseInt(hours);
+    minutes = parseInt(minutes);
+
+    if (ampm) {
+      ampm = ampm.toUpperCase();
+      if (ampm === "PM" && hours < 12) hours += 12;
+      if (ampm === "AM" && hours === 12) hours = 0;
+    }
+
+    // Build a Date object for today in input zone
+    const now = new Date();
+    const date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0);
+
+    return date.toLocaleString("en-US", { timeZone: inputZone, hour12: false });
+  }
+
+  // --- Convert Button ---
+  convertBtn.addEventListener("click", () => {
+    const inputTime = convertInput.value.trim();
+    const inputZone = convertZoneSelect.value;
+
+    const parsed = convertTime(inputTime, inputZone);
+    if (!parsed) {
+      convertResults.innerHTML = "Invalid format. Use HH:MM or HH:MM AM/PM";
+      return;
+    }
+
+    let resultsHtml = "";
+    userZones.forEach(zone => {
+      const t = new Date(parsed).toLocaleTimeString("en-US", { timeZone: zone.tz, hour12: false });
+      resultsHtml += `<div>${zone.label}: ${t}</div>`;
+    });
+
+    convertResults.innerHTML = resultsHtml;
+  });
+
+  // --- Init ---
+  renderClocks();
+  updateClocks();
+  setInterval(updateClocks, 1000);
+
+</script>
 </body>
 </html>
