@@ -87,13 +87,17 @@ addBtn.addEventListener("click", () => {
   }
 });
 
-// --- Smart Time Converter ---
-function parseTimeInput(input) {
-  const match = input.match(/^([A-Za-z\/_]+)\s+(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?$/);
+// --- Smart Time Converter with Dropdown ---
+const convertInput = document.getElementById("converter-input");
+const convertZoneSelect = document.getElementById("converter-zone");
+const convertBtn = document.getElementById("convert-btn");
+const convertResults = document.getElementById("converter-results");
+
+function parseTimeInputWithDropdown(input, tzInput) {
+  const match = input.match(/^(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?$/);
   if (!match) return null;
 
-  let [_, tzInputRaw, hours, minutes, ampm] = match;
-  const tzInput = tzMap[tzInputRaw.toUpperCase()] || tzInputRaw; // map label to IANA
+  let [_, hours, minutes, ampm] = match;
   hours = parseInt(hours);
   minutes = parseInt(minutes);
 
@@ -112,8 +116,29 @@ function parseTimeInput(input) {
     return null;
   }
 
-  return { date, tzInput };
+  return { date };
 }
+
+convertBtn.addEventListener("click", () => {
+  const inputTime = convertInput.value.trim();
+  const tzInput = convertZoneSelect.value;
+
+  const parsed = parseTimeInputWithDropdown(inputTime, tzInput);
+  if (!parsed) {
+    convertResults.innerHTML = "Invalid format. Use e.g., 17:00 or 5:30 PM";
+    return;
+  }
+
+  const { date } = parsed;
+  let resultsHtml = "";
+  userZones.forEach(zone => {
+    const t = date.toLocaleTimeString("en-US", { timeZone: zone.tz, hour12: false });
+    resultsHtml += `<div>${zone.label}: ${t}</div>`;
+  });
+
+  convertResults.innerHTML = resultsHtml;
+});
+
 
 // Convert Button
 convertBtn.addEventListener("click", () => {
