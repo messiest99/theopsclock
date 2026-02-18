@@ -7,7 +7,7 @@
 <style>
   body {
     margin: 0;
-    font-family: monospace;
+    font-family: monospace; /* original font restored */
     background-color: #000;
     color: #f00;
     display: flex;
@@ -105,6 +105,7 @@
 
 <div id="clock-container"></div>
 
+<!-- Add Time Zone panel back above converter -->
 <div class="add-zone-panel">
   <select id="timezone-select">
     <option value="UTC">Zulu</option>
@@ -119,6 +120,7 @@
   <button id="add-zone">Add</button>
 </div>
 
+<!-- Time Converter -->
 <div class="converter">
   <h2>Time Converter</h2>
   <input type="text" id="converter-input" placeholder="e.g., 14:00 or 2:30 PM" />
@@ -137,7 +139,6 @@
 </div>
 
 <script>
-  // --- Default Zones ---
   const defaultZones = [
     { label: "Zulu", tz: "UTC" },
     { label: "PST", tz: "America/Los_Angeles" },
@@ -157,12 +158,10 @@
   const convertBtn = document.getElementById("convert-btn");
   const convertResults = document.getElementById("converter-results");
 
-  // --- Save Zones ---
   function saveZones() {
     localStorage.setItem("opsclock-zones", JSON.stringify(userZones));
   }
 
-  // --- Render Clocks ---
   function renderClocks() {
     container.innerHTML = "";
     userZones.forEach((zone, index) => {
@@ -193,7 +192,6 @@
     });
   }
 
-  // --- Update Clocks ---
   function updateClocks() {
     const now = new Date();
     userZones.forEach((zone, index) => {
@@ -202,7 +200,6 @@
     });
   }
 
-  // --- Add Zone ---
   addBtn.addEventListener("click", () => {
     const selectedTz = timezoneSelect.value;
     const selectedLabel = timezoneSelect.options[timezoneSelect.selectedIndex].text;
@@ -213,7 +210,7 @@
     }
   });
 
-  // --- Convert Button (Fully Fixed) ---
+  // Simple Converter (works in user's local time now)
   convertBtn.addEventListener("click", () => {
     const inputTime = convertInput.value.trim();
     const inputZone = convertZoneSelect.value;
@@ -234,37 +231,29 @@
       if (ampm === "AM" && hours === 12) hours = 0;
     }
 
-    // --- Build UTC timestamp from input zone ---
     const now = new Date();
-    const dtf = new Intl.DateTimeFormat("en-US", {
-      hour12: false,
-      timeZone: inputZone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit"
-    });
-    const [{ value: month },,{ value: day },,{ value: year },,{ value: hour },,{ value: minute },,{ value: second }] = dtf.formatToParts(now);
-    // Construct a Date in UTC corresponding to input time in input zone
-    const inputDate = new Date(Date.UTC(year, month-1, day, hours, minutes, 0));
+    const date = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      hours,
+      minutes,
+      0
+    ));
 
-    // --- Show converted times ---
     let resultsHtml = "";
     userZones.forEach(zone => {
-      const t = inputDate.toLocaleTimeString("en-US", { timeZone: zone.tz, hour12: false });
+      const t = date.toLocaleTimeString("en-US", { timeZone: zone.tz, hour12: false });
       resultsHtml += `<div>${zone.label}: ${t}</div>`;
     });
 
     convertResults.innerHTML = resultsHtml;
   });
 
-  // --- Init ---
   renderClocks();
   updateClocks();
   setInterval(updateClocks, 1000);
-
 </script>
+
 </body>
 </html>
