@@ -1,4 +1,3 @@
-// --- Default Zones ---
 const defaultZones = [
   { label: "Zulu", tz: "UTC" },
   { label: "PST", tz: "America/Los_Angeles" },
@@ -8,43 +7,22 @@ const defaultZones = [
   { label: "London", tz: "Europe/London" }
 ];
 
-// Load user zones from localStorage or use default
 let userZones = JSON.parse(localStorage.getItem("opsclock-zones")) || defaultZones;
 
-// Map custom labels to IANA time zones
-const tzMap = {
-  "ZULU": "UTC",
-  "UTC": "UTC",
-  "PST": "America/Los_Angeles",
-  "MST": "America/Denver",
-  "CT": "America/Chicago",
-  "EST": "America/New_York",
-  "LONDON": "Europe/London",
-  "TOKYO": "Asia/Tokyo",
-  "SYDNEY": "Australia/Sydney"
-};
-
-// DOM Elements
 const container = document.getElementById("clock-container");
 const timezoneSelect = document.getElementById("timezone-select");
 const addBtn = document.getElementById("add-zone");
-const convertInput = document.getElementById("converter-input");
-const convertZoneSelect = document.getElementById("converter-zone");
-const convertBtn = document.getElementById("convert-btn");
-const convertResults = document.getElementById("converter-results");
 
-// --- Save Zones to localStorage ---
 function saveZones() {
   localStorage.setItem("opsclock-zones", JSON.stringify(userZones));
 }
 
-// --- Render Clocks ---
 function renderClocks() {
   container.innerHTML = "";
   userZones.forEach((zone, index) => {
     const clockDiv = document.createElement("div");
     clockDiv.classList.add("clock");
-
+    
     const label = document.createElement("div");
     label.classList.add("label");
     label.textContent = zone.label;
@@ -69,7 +47,6 @@ function renderClocks() {
   });
 }
 
-// --- Update Clocks Every Second ---
 function updateClocks() {
   const now = new Date();
   userZones.forEach((zone, index) => {
@@ -78,11 +55,11 @@ function updateClocks() {
   });
 }
 
-// --- Add Zone Button ---
+// Add a new zone
 addBtn.addEventListener("click", () => {
   const selectedTz = timezoneSelect.value;
   const selectedLabel = timezoneSelect.options[timezoneSelect.selectedIndex].text;
-
+  
   if (!userZones.some(z => z.tz === selectedTz)) {
     userZones.push({ label: selectedLabel, tz: selectedTz });
     saveZones();
@@ -90,17 +67,19 @@ addBtn.addEventListener("click", () => {
   }
 });
 
-// --- Time Converter with Dropdown ---
-function parseTimeInputWithDropdown(input, tzInput) {
-  // Match HH:MM with optional AM/PM
-  const match = input.match(/^(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?$/);
+// --- Time Converter (smarter, supports 12h/24h)
+const convertInput = document.getElementById("converter-input");
+const convertBtn = document.getElementById("convert-btn");
+const convertResults = document.getElementById("converter-results");
+
+function parseTimeInput(input) {
+  const match = input.match(/^([A-Za-z\/_]+)\s+(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?$/);
   if (!match) return null;
 
-  let [, hours, minutes, ampm] = match;
+  let [_, tzInput, hours, minutes, ampm] = match;
   hours = parseInt(hours);
   minutes = parseInt(minutes);
 
-  // Convert 12-hour format if AM/PM present
   if (ampm) {
     ampm = ampm.toUpperCase();
     if (ampm === "PM" && hours < 12) hours += 12;
@@ -108,26 +87,15 @@ function parseTimeInputWithDropdown(input, tzInput) {
   }
 
   const now = new Date();
-  let date;
-  try {
-    // Create Date object in selected input time zone
-    date = new Date(now.toLocaleString("en-US", { timeZone: tzInput }));
-    date.setHours(hours, minutes, 0, 0);
-  } catch (e) {
-    return null;
-  }
-
-  return { date };
+  const date = new Date(now.toLocaleString("en-US", { timeZone: tzInput }));
+  date.setHours(hours, minutes, 0, 0);
+  return { date, tzInput };
 }
 
-// --- Convert Button Event ---
 convertBtn.addEventListener("click", () => {
-  const inputTime = convertInput.value.trim();
-  const tzInput = convertZoneSelect.value;
-
-  const parsed = parseTimeInputWithDropdown(inputTime, tzInput);
+  const parsed = parseTimeInput(convertInput.value.trim());
   if (!parsed) {
-    convertResults.innerHTML = "Invalid format. Use e.g., 14:00 or 5:30 PM";
+    convertResults.innerHTML = "Invalid format. Use e.g., MST 5:30 PM or 17:30";
     return;
   }
 
@@ -141,7 +109,6 @@ convertBtn.addEventListener("click", () => {
   convertResults.innerHTML = resultsHtml;
 });
 
-// --- Initialize ---
 renderClocks();
 updateClocks();
 setInterval(updateClocks, 1000);
