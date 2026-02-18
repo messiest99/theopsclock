@@ -9,18 +9,42 @@ body {
   min-height: 100vh;
 }
 
+/* Settings area (Add Time Zone) */
 .settings {
   margin: 20px;
   display: flex;
   gap: 10px;
   align-items: center;
+  background-color: #000; /* match background */
+  padding: 10px 15px;
+  border: 1px dashed red;
+  border-radius: 8px;
 }
 
-select, button {
+/* Select and buttons */
+select, button, #converter-input, #convert-btn {
+  background-color: black;
+  color: red;
+  border: 1px solid red;
   font-size: 16px;
-  padding: 5px;
+  padding: 5px 8px;
+  border-radius: 4px;
 }
 
+select:focus, button:focus, #converter-input:focus, #convert-btn:focus {
+  outline: none;
+  box-shadow: 0 0 5px red;
+  border-color: red;
+  color: red;
+}
+
+/* Hover effect for buttons */
+button:hover, #convert-btn:hover {
+  background-color: #220000;
+  cursor: pointer;
+}
+
+/* Clock container */
 .container {
   display: flex;
   flex-wrap: wrap;
@@ -64,10 +88,14 @@ select, button {
   cursor: pointer;
 }
 
-/* Converter */
+/* Converter box */
 .converter {
   margin: 30px;
   text-align: center;
+  background-color: #000;
+  padding: 15px 20px;
+  border: 1px dashed red;
+  border-radius: 8px;
 }
 
 #converter-input {
@@ -80,9 +108,4 @@ select, button {
   font-size: 16px;
   padding: 5px 10px;
   margin-left: 10px;
-}
-
-#converter-results {
-  margin-top: 15px;
-  line-height: 1.5;
 }
