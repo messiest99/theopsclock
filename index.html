@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- Add Time Zone Settings -->
   <div class="settings">
     <label for="timezone-select">Add Time Zone:</label>
     <select id="timezone-select">
@@ -22,6 +23,7 @@
     <button id="add-zone">Add</button>
   </div>
 
+  <!-- Clock Container -->
   <div class="container" id="clock-container">
     <!-- Clocks populate dynamically -->
   </div>
@@ -29,7 +31,18 @@
   <!-- Time Converter -->
   <div class="converter">
     <h2>Time Converter</h2>
-    <input type="text" id="converter-input" placeholder="e.g., MST 5:00 PM or 17:00" />
+    <input type="text" id="converter-input" placeholder="Type time zone e.g. MST 5:30 PM" list="tz-list" />
+    <datalist id="tz-list">
+      <option value="Zulu">
+      <option value="UTC">
+      <option value="PST">
+      <option value="MST">
+      <option value="CT">
+      <option value="EST">
+      <option value="London">
+      <option value="Tokyo">
+      <option value="Sydney">
+    </datalist>
     <button id="convert-btn">Convert</button>
     <div id="converter-results"></div>
   </div>
