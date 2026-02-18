@@ -77,48 +77,55 @@ addBtn.addEventListener("click", () => {
   }
 });
 
-// --- Time Converter with Dropdown (fixed) ---
-function parseTimeInput(input, tzInput) {
-  // Match HH:MM with optional AM/PM
-  const match = input.match(/^(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?$/);
+// --- Converter: Build UTC Date from input time & input zone ---
+function convertInputToUTC(inputTime, inputZone) {
+  const match = inputTime.match(/^(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?$/);
   if (!match) return null;
 
   let [, hours, minutes, ampm] = match;
   hours = parseInt(hours);
   minutes = parseInt(minutes);
 
-  // Handle AM/PM
   if (ampm) {
     ampm = ampm.toUpperCase();
     if (ampm === "PM" && hours < 12) hours += 12;
     if (ampm === "AM" && hours === 12) hours = 0;
   }
 
-  // Create Date in UTC equivalent of input zone
+  // Create a Date object for today at the given time in the input time zone
   const now = new Date();
-  const dateStr = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')}T${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:00`;
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const day = now.getDate();
+
+  // Step 1: build ISO string as if in input time zone
+  const localStr = `${year}-${(month+1).toString().padStart(2,'0')}-${day.toString().padStart(2,'0')}T${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:00`;
+
+  // Step 2: convert to UTC by using toLocaleString trick
+  const utcDate = new Date(new Date(localStr).toLocaleString("en-US", { timeZone: "UTC", hour12: false }));
   
-  // Build date as if in input time zone by using toLocaleString trick
-  const date = new Date(new Date(dateStr).toLocaleString("en-US", { timeZone: tzInput }));
+  // Step 3: calculate offset between input zone and UTC
+  const tzOffsetDate = new Date(localStr);
+  const tzOffset = tzOffsetDate.getTime() - utcDate.getTime();
   
-  return { date };
+  // Final UTC date
+  return new Date(utcDate.getTime() - tzOffset);
 }
 
-// --- Convert Button Event ---
+// --- Convert Button ---
 convertBtn.addEventListener("click", () => {
   const inputTime = convertInput.value.trim();
-  const tzInput = convertZoneSelect.value;
+  const inputZone = convertZoneSelect.value;
 
-  const parsed = parseTimeInput(inputTime, tzInput);
-  if (!parsed) {
-    convertResults.innerHTML = "Invalid format. Use e.g., 14:00 or 5:30 PM";
+  const utcDate = convertInputToUTC(inputTime, inputZone);
+  if (!utcDate) {
+    convertResults.innerHTML = "Invalid format. Use HH:MM or HH:MM AM/PM";
     return;
   }
 
-  const { date } = parsed;
   let resultsHtml = "";
   userZones.forEach(zone => {
-    const t = date.toLocaleTimeString("en-US", { timeZone: zone.tz, hour12: false });
+    const t = utcDate.toLocaleTimeString("en-US", { timeZone: zone.tz, hour12: false });
     resultsHtml += `<div>${zone.label}: ${t}</div>`;
   });
 
