@@ -1,31 +1,19 @@
-body {
-  margin: 0;
-  background-color: black;
-  color: red;
-  font-family: 'Courier New', monospace;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+function updateClocks() {
+  const now = new Date();
+
+  const utc = now.toLocaleTimeString("en-US", {
+    timeZone: "UTC",
+    hour12: false
+  });
+
+  const ny = now.toLocaleTimeString("en-US", {
+    timeZone: "America/New_York",
+    hour12: false
+  });
+
+  document.getElementById("utc").textContent = utc;
+  document.getElementById("ny").textContent = ny;
 }
 
-.container {
-  display: flex;
-  gap: 80px;
-}
-
-.clock {
-  text-align: center;
-}
-
-.label {
-  font-size: 20px;
-  letter-spacing: 4px;
-  margin-bottom: 10px;
-}
-
-.time {
-  font-size: 80px;
-  text-shadow: 0 0 15px red;
-}
-
+setInterval(updateClocks, 1000);
+updateClocks();
