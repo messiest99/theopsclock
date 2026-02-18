@@ -67,16 +67,17 @@ addBtn.addEventListener("click", () => {
   }
 });
 
-// --- Time Converter (smarter, supports 12h/24h)
+// --- Smart Time Converter with Dropdown ---
 const convertInput = document.getElementById("converter-input");
+const convertZoneSelect = document.getElementById("converter-zone");
 const convertBtn = document.getElementById("convert-btn");
 const convertResults = document.getElementById("converter-results");
 
-function parseTimeInput(input) {
-  const match = input.match(/^([A-Za-z\/_]+)\s+(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?$/);
+function parseTimeInputWithDropdown(input, tzInput) {
+  const match = input.match(/^(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?$/);
   if (!match) return null;
 
-  let [_, tzInput, hours, minutes, ampm] = match;
+  let [_, hours, minutes, ampm] = match;
   hours = parseInt(hours);
   minutes = parseInt(minutes);
 
@@ -87,15 +88,24 @@ function parseTimeInput(input) {
   }
 
   const now = new Date();
-  const date = new Date(now.toLocaleString("en-US", { timeZone: tzInput }));
-  date.setHours(hours, minutes, 0, 0);
-  return { date, tzInput };
+  let date;
+  try {
+    date = new Date(now.toLocaleString("en-US", { timeZone: tzInput }));
+    date.setHours(hours, minutes, 0, 0);
+  } catch (e) {
+    return null;
+  }
+
+  return { date };
 }
 
 convertBtn.addEventListener("click", () => {
-  const parsed = parseTimeInput(convertInput.value.trim());
+  const inputTime = convertInput.value.trim();
+  const tzInput = convertZoneSelect.value;
+
+  const parsed = parseTimeInputWithDropdown(inputTime, tzInput);
   if (!parsed) {
-    convertResults.innerHTML = "Invalid format. Use e.g., MST 5:30 PM or 17:30";
+    convertResults.innerHTML = "Invalid format. Use e.g., 17:00 or 5:30 PM";
     return;
   }
 
@@ -108,6 +118,7 @@ convertBtn.addEventListener("click", () => {
 
   convertResults.innerHTML = resultsHtml;
 });
+
 
 renderClocks();
 updateClocks();
